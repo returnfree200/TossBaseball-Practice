@@ -55,14 +55,32 @@ def create_memo(user_id: int, memo: schemas.MemoCreate, db: Session = Depends(ge
 
     
 
-# 3) GET /memos (작성자 포함, JOIN 필수)
-@app.get("/memos", response_model=List[schemas.MemoOut])
+# 3) GET /memos (작성자 정보 대신 반응 개수 포함)
+@app.get("/memos", response_model=List[schemas.MemoOutV2])
 def read_all_memos(db: Session = Depends(get_db)):
-    # [요구조건] joinedload를 사용하여 N+1 방지 및 한 번에 JOIN 조회
-    memos = db.query(models.Memo).options(joinedload(models.Memo.author)).all()
-    if memos is None: # 논리적 예외 상황 대응
-        raise HTTPException(status_code=400, detail={"error": "BAD_REQUEST"})
-    return memos
+    # 1단계의 joinedload 대신, LEFT OUTER JOIN과 GROUP BY를 사용합니다.
+    # 반응이 없는 메모도 나와야 하므로 outerjoin이 필수입니다.
+    results = db.query(
+        models.Memo,
+        func.count(models.MemoReaction.id).filter(models.MemoReaction.reaction == "like").label("like_count"),
+        func.count(models.MemoReaction.id).filter(models.MemoReaction.reaction == "dislike").label("dislike_count")
+    ).outerjoin(models.MemoReaction).group_by(models.Memo.id).all()
+
+    # 쿼리 결과를 스키마 형식에 맞춰 리스트로 변환
+    return [
+        {
+            "id": m.id,
+            "user_id": m.user_id,
+            "title": m.title,
+            "content": m.content,
+            "created_at": m.created_at,
+            "updated_at": m.updated_at,
+            "like_count": lc,
+            "dislike_count": dc
+        } for m, lc, dc in results
+    ]    
+    
+
 
 # 4) GET /users/{user_id}/memos
 @app.get("/users/{user_id}/memos", response_model=List[schemas.MemoOut])
@@ -73,3 +91,45 @@ def read_user_memos(user_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail={"error": "USER_NOT_FOUND"})
     
     return db.query(models.Memo).filter(models.Memo.user_id == user_id).all()
+
+
+    # 5) POST /memos/{memo_id}/reactions
+@app.post("/memos/{memo_id}/reactions")
+def create_reaction(memo_id: int, req: schemas.ReactionRequest, db: Session = Depends(get_db)):
+    # 1. 유저와 메모가 존재하는지 확인 (400 INVALID_ID)
+    db_user = db.get(models.User, req.user_id)
+    db_memo = db.get(models.Memo, memo_id)
+    if not db_user or not db_memo:
+        raise HTTPException(status_code=400, detail={"error": "INVALID_ID"})
+
+    # 2. cancel 요청 처리
+    if req.reaction == "cancel":
+        db.query(models.MemoReaction).filter(
+            models.MemoReaction.memo_id == memo_id,
+            models.MemoReaction.user_id == req.user_id
+        ).delete()
+        db.commit()
+        return {"memo_id": memo_id, "user_id": req.user_id, "reaction": "none"}
+
+    # 3. like / dislike 처리 (UPSERT 로직)
+    # 기존 반응이 있는지 확인
+    existing_reaction = db.query(models.MemoReaction).filter(
+        models.MemoReaction.memo_id == memo_id,
+        models.MemoReaction.user_id == req.user_id
+    ).first()
+
+    if existing_reaction:
+        # 이미 있다면 상태 변경 (like -> dislike 등)
+        existing_reaction.reaction = req.reaction
+        existing_reaction.created_at = func.now() # 시간 갱신
+    else:
+        # 없다면 새로 생성
+        new_reaction = models.MemoReaction(
+            memo_id=memo_id, 
+            user_id=req.user_id, 
+            reaction=req.reaction
+        )
+        db.add(new_reaction)
+
+    db.commit()
+    return {"memo_id": memo_id, "user_id": req.user_id, "reaction": req.reaction}
