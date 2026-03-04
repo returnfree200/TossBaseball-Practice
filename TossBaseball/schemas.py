@@ -36,3 +36,24 @@ class MemoOut(BaseModel):
 # 3. 공통 에러 응답 규격 (요구사항 반영)
 class ErrorResponse(BaseModel):
     error: str
+
+# step2
+
+# 1. 반응 요청용 스키마 (POST /memos/{memo_id}/reactions 에서 사용)
+class ReactionRequest(BaseModel):
+    user_id: int
+    reaction: str  # "like", "dislike", "cancel" 중 하나가 들어옴
+
+# 2. 2단계 메모 출력용 스키마 (GET /memos 에서 사용)
+class MemoOutV2(BaseModel):
+    id: int
+    user_id: int
+    title: str
+    content: str
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+    like_count: int      # 집계된 좋아요 개수
+    dislike_count: int   # 집계된 싫어요 개수
+
+    class Config:
+        from_attributes = True # SQLAlchemy 모델을 Pydantic으로 변환 허용
