@@ -51,7 +51,6 @@ class MemoOutV2(BaseModel):
     title: str
     content: str
     created_at: datetime
-    updated_at: Optional[datetime] = None
     like_count: int      # 집계된 좋아요 개수
     dislike_count: int   # 집계된 싫어요 개수
 
