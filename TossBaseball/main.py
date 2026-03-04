@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session, joinedload
 from typing import List
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from sqlalchemy import func
 
 import models, schemas
 from database import SessionLocal, engine
@@ -74,7 +75,6 @@ def read_all_memos(db: Session = Depends(get_db)):
             "title": m.title,
             "content": m.content,
             "created_at": m.created_at,
-            "updated_at": m.updated_at,
             "like_count": lc,
             "dislike_count": dc
         } for m, lc, dc in results
