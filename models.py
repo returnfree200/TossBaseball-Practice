@@ -10,6 +10,7 @@ class User(Base):
     id = Column(BigInteger, primary_key=True, autoincrement=True)
     email = Column(Text, nullable=False, unique=True)
     name = Column(Text, nullable=False)
+    age = Column(Integer, nullable=True)
     created_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
     # 관계 설정: 한 유저는 여러 메모를 가질 수 있음 (1:N)

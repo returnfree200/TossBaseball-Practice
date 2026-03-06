@@ -6,11 +6,13 @@ from typing import List, Optional
 class UserCreate(BaseModel):
     email: EmailStr  # Pydantic이 이메일 형식을 자동으로 검사합니다
     name: str
+    age: Optional[int] = None
 
 class UserOut(BaseModel):
     id: int
     email: str
     name: str
+    age: Optional[int] = None
     created_at: datetime
 
     class Config:
