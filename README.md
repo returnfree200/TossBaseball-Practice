@@ -1,6 +1,6 @@
 # ⚾ TossBaseball-Practice (FastAPI-Study)
 
-> **안내**: 이 프로젝트는 FastAPI와 PostgreSQL의 기초를 익히기 위한 연습용 저장소입니다. 실전 프로젝트는 [여기](새 주소)에서 진행 중입니다.
+> **안내**: 이 프로젝트는 FastAPI와 PostgreSQL의 기초를 익히기 위한 연습용 저장소입니다. 실전 프로젝트는 https://github.com/returnfree200/TossBaseball-Backend (새 주소)에서 진행 중입니다.
 
 **TossBaseball-Practice**는 KBO 리그 경기 결과 예측 데이터를 체계적으로 관리하고 집계하기 위한 고성능 백엔드 시스템입니다. 본 프로젝트는 **'앱인토스(App-in-Toss)'** 플랫폼 정식 등재를 목표로 본격적인 개발을 진행하기 전, 기술 검증 및 아키텍처 구상을 위한 **연습 및 테스트(Practice) 단계**의 프로젝트입니다. 대규모 승부예측 데이터를 안정적으로 처리할 수 있는 기반을 마련하는 것을 지향합니다.
 
